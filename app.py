@@ -6,60 +6,39 @@ import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 import pytesseract
 from PIL import Image
 import pdfplumber
-from pptx import Presentation
-import openpyxl
-import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 # Setup title and description
-st.title("Advanced Fishbone and USG Analysis with Multivariate and Bivariate Analysis")
-st.write("Upload Fishbone Analysis and USG (Urgency, Seriousness, Growth) documents to evaluate their alignment, perform correlation analysis, and multivariate interpretation with automatic suggestions and solutions.")
+st.title("Fishbone and USG Analysis Tool - Focus on PDF and Image")
+st.write("Upload Fishbone Analysis and USG (Urgency, Seriousness, Growth) documents in PDF or image (JPG, PNG) format to evaluate their alignment and perform advanced analysis.")
 
 # Supported file formats
-SUPPORTED_FORMATS = ["txt", "jpg", "png", "pdf", "csv", "xlsx", "ppt", "pptx"]
+SUPPORTED_FORMATS = ["pdf", "jpg", "png"]
 
-# File upload for Fishbone or USG Analysis
-uploaded_file = st.file_uploader("Choose a file", type=SUPPORTED_FORMATS)
+# File upload for Fishbone or USG Analysis (PDF or Image)
+uploaded_file = st.file_uploader("Choose a file (PDF or Image)", type=SUPPORTED_FORMATS)
 
 # Initialize sentence transformer model for semantic similarity
 model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
-# Function to extract text from various file formats
+# Function to extract text from image or PDF
 def extract_text_from_file(file):
     file_type = file.type
-    if "text" in file_type:
-        text = file.read().decode("utf-8")
-        return text
-    elif "image" in file_type:
+    if "image" in file_type:  # For image files (JPG, PNG)
         img = Image.open(file)
-        text = pytesseract.image_to_string(img)
+        text = pytesseract.image_to_string(img)  # OCR for images
         return text
-    elif "pdf" in file_type:
+    elif "pdf" in file_type:  # For PDF files
         text = ""
         with pdfplumber.open(file) as pdf:
             for page in pdf.pages:
-                text += page.extract_text()
-        return text
-    elif "csv" in file_type:
-        df = pd.read_csv(file)
-        return df.to_string()
-    elif "spreadsheet" in file_type or "excel" in file_type:
-        df = pd.read_excel(file)
-        return df.to_string()
-    elif "presentation" in file_type or "ppt" in file_type:
-        presentation = Presentation(file)
-        text = ""
-        for slide in presentation.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    text += shape.text + "\n"
+                text += page.extract_text()  # Extract text from each page
         return text
     else:
         return None
@@ -101,37 +80,22 @@ def calculate_causal_inference(fishbone_text, usg_text):
 def calculate_temporal_growth_prediction(fishbone_text, usg_text):
     return np.random.rand()
 
-# Automatic suggestions and solutions based on feature analysis
-def generate_suggestions(features):
-    suggestions = []
-    if features[0] < 0.5:
-        suggestions.append("**Improve Semantic Alignment** between Fishbone and USG. The current semantic similarity is low, indicating potential misalignment in root cause and priority interpretation.")
-    if features[1] > 0.6:
-        suggestions.append("**Reduce the Gap** between identified root causes in Fishbone and priorities in USG.")
-    if features[2] < 0.7:
-        suggestions.append("**Better Align Sentiment** for Urgency and Seriousness between Fishbone and USG.")
-    if features[3] > 0.5:
-        suggestions.append("**Investigate Discrepancies** between Fishbone and USG dimensions. Discrepancies detected suggest inconsistent analysis.")
-    if features[4] < 0.5:
-        suggestions.append("**Increase Relevance** of key entities between Fishbone and USG. Current relevance is low.")
-    return suggestions
-
 # Main process after file upload
 if uploaded_file:
-    # Extract text from uploaded file
+    # Extract text from the uploaded PDF or Image
     file_text = extract_text_from_file(uploaded_file)
 
     if file_text:
         st.subheader("Extracted Text from Uploaded File")
         st.write(file_text)
 
-        # Dummy comparison for Fishbone vs USG comparison
+        # Compare with sample USG text
         if st.button("Compare with Sample USG Text"):
             sample_usg_text = "This is a sample text for USG analysis including Urgency, Seriousness, and Growth."
             similarity = calculate_semantic_similarity(file_text, sample_usg_text)
             st.write(f"Semantic Similarity with sample USG text: {similarity:.2f}")
 
-        # Calculate scores for advanced metrics
+        # Calculate advanced metrics
         gap_analysis_score = calculate_gap_analysis(file_text, sample_usg_text)
         relevance_score = calculate_relevance(file_text, sample_usg_text)
         discrepancy_score = calculate_discrepancy(file_text, sample_usg_text)
@@ -185,16 +149,6 @@ if uploaded_file:
         st.write(f"Sentiment Consistency: {features[2]:.2f}")
         st.write(f"Discrepancy Score: {features[3]:.2f}")
         st.write(f"Relevance Score: {features[4]:.2f}")
-
-        # Multivariate analysis interpretation
-        st.subheader("Multivariate Analysis Interpretation")
-        st.write("The multivariate analysis shows how different features work together to affect the final classification. Logistic regression was used to model the relationships between features and the target classification. The accuracy score and classification report give insights into the model performance.")
-
-        # Generate suggestions based on feature analysis
-        st.subheader("Automatic Suggestions and Solutions")
-        suggestions = generate_suggestions(features)
-        for suggestion in suggestions:
-            st.write(f"- {suggestion}")
 
     else:
         st.error("Unable to extract text from the uploaded file.")
